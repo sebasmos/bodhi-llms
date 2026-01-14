@@ -30,6 +30,9 @@ authors = [
     { name = "Jana Sedlakova" },
     { name = "Pritika Vig" },
 ]
+maintainers = [
+    { name = "Sebastián Andrés Cajas Ordóñez", email = "sebasmos@mit.edu" },
+]
 keywords = [
     "llm",
     "ai",
