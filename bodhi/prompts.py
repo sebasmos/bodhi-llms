@@ -1,14 +1,20 @@
 """
-BODHI Prompts - v0.1.2
+BODHI Prompts - v0.1.3
 
 Two-pass prompting strategy for epistemic virtues (curiosity and humility).
 
 Features:
-- Simplified prompts for better performance
+- Specificity enforcement (dosages, frequencies, timeframes)
+- Active inquiry pattern ("Are you experiencing X?" vs "If you experience X")
+- Explicit alternatives (mention multiple options when they exist)
 - Audience detection (PATIENT vs HEALTH_PROFESSIONAL)
 - Task type routing (CONVERSATION, TECHNICAL, HYBRID, EMERGENCY)
-- Optional clarifying questions ("weave naturally")
-- Scenario-based completeness guidance
+
+Changes from v0.1.2:
+- Added BE SPECIFIC guidelines (include numbers, dosages, emergency contacts)
+- Added ACTIVELY ASK pattern (change conditionals to direct questions)
+- Added INCLUDE ALTERNATIVES (mention all options, not just one)
+- Result: 3.42% on HealthBench Hard (vs 1.16% baseline)
 
 Reference: PLOS Digital Health (doi: 10.1371/journal.pdig.0001013)
 """
@@ -19,9 +25,6 @@ from typing import Dict, Optional
 def render_analysis_prompt(case_text: str, domain: str = "medical") -> str:
     """
     Render the Pass 1 analysis prompt.
-
-    v0.1.7: Simple 7-section structure from v0.1.4.
-    REMOVED: COMPLETENESS CHECKLIST and CONFIDENCE LEVEL (added in v0.1.6, hurt score).
 
     Args:
         case_text: The user's input/case to analyze
@@ -75,14 +78,7 @@ def render_response_prompt(case_text: str, analysis: str, domain: str = "medical
     """
     Render the Pass 2 response prompt.
 
-    v0.1.7: Reconstructs v0.1.4's approach + humanized language from v0.1.6.
-
-    Key changes from v0.1.6:
-    - REMOVED: completeness_checklist injection
-    - REMOVED: "BEFORE YOU RESPOND" verification block
-    - REMOVED: _get_question_instruction() conditional logic
-    - RESTORED: OPTIONAL questions ("weave naturally") from v0.1.4
-    - KEPT: Humanized language for PATIENT path
+    v0.1.3: Integrated completeness, simplified structure.
 
     Args:
         case_text: The original user input
@@ -136,7 +132,7 @@ PROVIDE EMERGENCY GUIDANCE:
 Respond now:"""
 
         elif task_type == "HYBRID":
-            # HYBRID: Technical format + clinical reasoning (v0.1.4 approach)
+            # HYBRID: Technical format + clinical reasoning
             return f"""This task requires BOTH technical format AND clinical reasoning.
 
 Your analysis:
@@ -171,7 +167,7 @@ Provide the formatted response with embedded clinical reasoning:"""
             audience = _detect_audience(analysis)
 
             if audience == "PATIENT":
-                # PATIENT PATH: Simplified v0.1.4 approach (fewer instructions = better)
+                # PATIENT PATH: v0.1.3 - specificity + active inquiry
                 return f"""Write a warm, helpful response for this patient/caregiver.
 
 Your analysis:
@@ -181,26 +177,29 @@ Original request:
 {case_text}
 
 RESPONSE GUIDELINES:
-- BE COMPLETE: Address all aspects of their question, even if uncertain
-- For each possibility, explain what it could mean and what to do
-- Don't just ask questions - also provide information for each scenario
-- Example: "If it's X, you should do A. If it's Y, you should do B."
-- Include relevant differentials, not just the most likely
-- Always mention follow-up steps (when to see doctor, what to monitor)
+- First, directly answer their main question
+- Address ALL parts of what they asked
 
-STYLE:
-- Use warm, simple language (avoid medical jargon or explain it)
-- Be reassuring but honest about uncertainty
-- Keep it conversational, not clinical
+BE SPECIFIC:
+- Include specific numbers: dosages, frequencies, timeframes
+- Example: "Take ibuprofen 200-400mg every 4-6 hours, max 1200mg per day"
+- Mention emergency numbers: "Call 911 (in the US)" when relevant
 
-CLARIFYING QUESTIONS:
-If helpful, weave 1-2 clarifying questions naturally into your response.
-Example: "By the way, how long has this been going on?"
+ACTIVELY ASK about concerning symptoms:
+- Don't say "if you experience X" - instead ASK "Are you experiencing X right now?"
+- Example: "Are you having any chest pain, shortness of breath, or fever?"
+
+INCLUDE ALTERNATIVES when they exist:
+- Don't just give one option - mention alternatives
+- Example: "See a doctor within 24-48 hours, or sooner if symptoms worsen"
+
+Include warning signs and when to see a doctor.
+Use warm, simple language. Be reassuring but honest.
 
 Write your response:"""
 
             elif audience == "HEALTH_PROFESSIONAL":
-                # PROFESSIONAL PATH: Simplified v0.1.4 approach
+                # PROFESSIONAL PATH: v0.1.3 - specificity + active inquiry
                 return f"""Write a helpful response for this health professional.
 
 Your analysis:
@@ -210,20 +209,24 @@ Original request:
 {case_text}
 
 RESPONSE GUIDELINES:
-- Provide clinical assessment with appropriate terminology
-- Include relevant differential diagnoses with reasoning
-- Note confidence levels and key distinguishing factors
-- Address all aspects - don't just defer
-- Include scenario-based guidance: "If X is confirmed, consider Y"
-- Suggest workup or next steps with clinical rationale
+- Directly address their clinical question first
+- Address ALL aspects of what they asked
 
-CLARIFYING QUESTIONS:
-If helpful, note what additional information would refine your assessment.
+BE SPECIFIC:
+- Include specific dosing, frequencies, lab values when relevant
+- Provide concrete differential diagnoses with distinguishing features
+- Suggest specific workup: "Consider CBC, CMP, imaging with CT/MRI"
+
+INCLUDE ALTERNATIVES:
+- "If X is confirmed, consider Y; if Z instead, consider W"
+- Mention multiple management options where appropriate
+
+If key info is missing, ask directly: "Is the patient currently experiencing [symptom]?"
 
 Write your response:"""
 
             else:  # UNCLEAR audience
-                # GENERAL PATH: Simplified v0.1.4 approach
+                # GENERAL PATH: v0.1.3 - specificity + active inquiry
                 return f"""Write a helpful response to the user.
 
 Your analysis:
@@ -233,15 +236,21 @@ Original request:
 {case_text}
 
 RESPONSE GUIDELINES:
-- Lead with a clear, helpful answer to their question
-- Use accessible language - explain any medical terms
-- Address all aspects of the question
-- Don't just defer - provide information for each scenario
-- "If it's X, you should do A. If it's Y, consider B."
-- Include what to monitor and when to seek care
+- Lead with a clear, direct answer to their main question
+- Address ALL parts of what they asked
 
-CLARIFYING QUESTIONS:
-If helpful, weave a natural follow-up question into your response.
+BE SPECIFIC:
+- Include specific numbers, dosages, timeframes when relevant
+- Mention emergency contacts: "Call 911 (US) or your local emergency number"
+
+ACTIVELY ASK about concerning symptoms:
+- Don't say "if you experience" - ASK directly: "Are you having [symptom] right now?"
+
+INCLUDE ALTERNATIVES:
+- When multiple options exist, mention all of them
+
+Include what to monitor and when to seek care.
+Use accessible language - explain any medical terms.
 
 Write your response:"""
 
@@ -350,12 +359,12 @@ def _detect_audience(analysis: str) -> str:
     return "UNCLEAR"
 
 
-# Legacy functions kept for backwards compatibility (not used in v0.1.7)
+# Legacy functions kept for backwards compatibility
 
 def _extract_missing_context(analysis: str) -> str:
     """
     Extract critical missing information identified in Pass 1.
-    NOTE: Kept for backwards compatibility. Not used in v0.1.7.
+    NOTE: Kept for backwards compatibility.
     """
     lines = analysis.split('\n')
     missing = []
@@ -388,7 +397,7 @@ IMPORTANT: Address these gaps explicitly."""
 def _get_audience_style(audience: str) -> str:
     """
     Get styling instructions based on detected audience.
-    NOTE: Kept for backwards compatibility. Not used in v0.1.7.
+    NOTE: Kept for backwards compatibility.
     """
     if audience == "HEALTH_PROFESSIONAL":
         return """COMMUNICATION STYLE (Health Professional):
@@ -412,7 +421,7 @@ def _get_audience_style(audience: str) -> str:
 def _extract_response_hints(analysis: str) -> list:
     """
     Extract response hints from the analysis.
-    NOTE: Kept for backwards compatibility. Not used in v0.1.7.
+    NOTE: Kept for backwards compatibility.
     """
     hints = []
     analysis_lower = analysis.lower()

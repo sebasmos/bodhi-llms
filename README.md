@@ -26,8 +26,8 @@ pip install bodhi-llm[all]
 
 ```bash
 # Clone the repository
-git clone https://github.com/sebasmos/bodhi.git
-cd bodhi
+git clone https://github.com/sebasmos/bodhi-llms.git
+cd bodhi-llms
 
 # Create a virtual environment (recommended)
 python3 -m venv venv
