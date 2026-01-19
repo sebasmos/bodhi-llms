@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bodhi-llm"
-version = "0.1.3"
+version = "0.1.4"
 description = "BODHI: Epistemic virtues (curiosity and humility) for LLM responses"
 readme = "README.md"
 license = "CC-BY-NC-SA-4.0"
@@ -12,10 +12,11 @@ requires-python = ">=3.10"
 authors = [
     { name = "Sebastián Andrés Cajas Ordóñez", email = "sebasmos@mit.edu" },
     { name = "Felipe Ocampo Osorio" },
+    { name = "Maximin Lange" },
+    { name = "Leo Anthony Celi" },
     { name = "Janan Arslan" },
     { name = "Kurt Benke" },
     { name = "Rowell Castro" },
-    { name = "Leo Anthony Celi" },
     { name = "Gustavo Adolfo Cruz-Suarez" },
     { name = "Roben Delos Reyes" },
     { name = "Justin Engelmann" },
@@ -23,7 +24,6 @@ authors = [
     { name = "Almog Hilel" },
     { name = "Mahima Kalla" },
     { name = "Leo Kinyera" },
-    { name = "Maximin Lange" },
     { name = "Torleif Markussen Lunde" },
     { name = "Mackenzie J Meni" },
     { name = "Anna E Premo" },

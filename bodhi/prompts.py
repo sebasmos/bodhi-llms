@@ -13,8 +13,7 @@ Features:
 Changes from v0.1.2:
 - Added BE SPECIFIC guidelines (include numbers, dosages, emergency contacts)
 - Added ACTIVELY ASK pattern (change conditionals to direct questions)
-- Added INCLUDE ALTERNATIVES (mention all options, not just one)
-- Result: 3.42% on HealthBench Hard (vs 1.16% baseline)
+- Added INCLUDE ALTERNATIVES (mention all options, not just one)s
 
 Reference: PLOS Digital Health (doi: 10.1371/journal.pdig.0001013)
 """
