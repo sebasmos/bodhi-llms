@@ -1,8 +1,7 @@
 <div align="center">
 
-# BODHI
+<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/5c358ea8-66c3-4b9a-984c-0909c06c3937" />
 
-**Epistemic virtues for LLMs**
 
 *Curiosity. Humility. Clarity.*
 
