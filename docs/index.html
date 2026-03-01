@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BODHI — Epistemic Virtues for Medical AI</title>
+  <style>
+    /* ── Base reset ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   Helvetica, Arial, sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      line-height: 1.6;
+    }
+    a { color: #58a6ff; }
+    h1, h2, h3 { color: #f0f6fc; }
+    section { padding: 3rem 1.5rem; max-width: 860px; margin: 0 auto; }
+    section + section { border-top: 1px solid #30363d; }
+    p { margin-top: .75rem; }
+
+    /* ── Virtue Activation Matrix ──────────────────────────────── */
+    #virtue-activation-matrix {
+      text-align: center;
+    }
+    #virtue-activation-matrix h2 {
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+    }
+    #virtue-activation-matrix p.hint {
+      font-size: .85rem;
+      color: #8b949e;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Wrapper keeps SVG + tooltips in the same stacking context */
+    .vam-wrapper {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+    }
+    .vam-wrapper svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-width: 520px;
+    }
+
+    /* ── Quadrant hover/focus styles (SVG elements) ─────────────── */
+    .quadrant {
+      cursor: pointer;
+      outline: none;
+    }
+    .quadrant .q-bg {
+      transition: opacity .15s ease;
+    }
+    .quadrant:hover .q-bg,
+    .quadrant:focus .q-bg {
+      opacity: .82;
+    }
+    .quadrant:focus {
+      /* SVG focus ring via outline on the <g> doesn't render in most browsers;
+         we use a <rect> .focus-ring instead, toggled via JS */
+    }
+    .focus-ring {
+      fill: none;
+      stroke: #58a6ff;
+      stroke-width: 3;
+      stroke-dasharray: 6 3;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .1s;
+    }
+    .quadrant:focus .focus-ring {
+      opacity: 1;
+    }
+
+    /* ── Tooltip bubbles (HTML, absolutely positioned) ──────────── */
+    .vam-tooltip {
+      position: absolute;
+      z-index: 20;
+      width: min(260px, 90vw);
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: .7rem .9rem;
+      font-size: .82rem;
+      line-height: 1.45;
+      color: #c9d1d9;
+      box-shadow: 0 8px 24px rgba(0,0,0,.5);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease;
+
+      /* Arrow pointer via pseudo-element */
+    }
+    .vam-tooltip.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .vam-tooltip strong {
+      display: block;
+      margin-bottom: .3rem;
+      color: #f0f6fc;
+      font-size: .88rem;
+    }
+
+    /* Arrow — placed by JS class */
+    .vam-tooltip::before {
+      content: '';
+      position: absolute;
+      border: 7px solid transparent;
+    }
+    .vam-tooltip.arrow-bottom::before {
+      border-top-color: #30363d;
+      bottom: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .vam-tooltip.arrow-top::before {
+      border-bottom-color: #30363d;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .vam-tooltip.arrow-bottom-right::before {
+      border-top-color: #30363d;
+      bottom: -14px;
+      right: 20px;
+    }
+    .vam-tooltip.arrow-bottom-left::before {
+      border-top-color: #30363d;
+      bottom: -14px;
+      left: 20px;
+    }
+
+    /* Screen-reader only helper */
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     VIRTUE ACTIVATION MATRIX
+════════════════════════════════════════════════════════ -->
+<section id="virtue-activation-matrix">
+  <h2>Virtue Activation Matrix</h2>
+  <p class="hint">Hover, focus (Tab), or tap each quadrant to see how BODHI should respond.</p>
+
+  <!-- Invisible descriptions used by aria-describedby -->
+  <span id="q1-desc" class="sr-only">Q1 — high confidence / low complexity: Proceed with a clear, concrete recommendation. Add 1–2 things to monitor and when to reassess if new information appears.</span>
+  <span id="q2-desc" class="sr-only">Q2 — high confidence / high complexity: Recommend a primary plan, but keep alternatives in view. State what findings would make you switch paths and which signs require escalation.</span>
+  <span id="q3-desc" class="sr-only">Q3 — low confidence / low complexity: Before concluding, ask 1–2 key questions. Explain what's missing, why it matters, and give a provisional step conditional on the answer.</span>
+  <span id="q4-desc" class="sr-only">Q4 — low confidence / high complexity: Don't assume: acknowledge limits and escalate. Ask for critical data, suggest who/where to refer, and provide safe steps + red flags.</span>
+
+  <div class="vam-wrapper" id="vam-wrapper">
+
+    <!--
+      SVG layout (viewBox 0 0 520 520):
+        Margins: top=60 left=80 right=20 bottom=60
+        Grid: x:80–460  y:60–460  (total 380×400)
+        Midpoint: x=270  y=260
+        Q1 top-left     : (80 ,60 )–(270,260)  High Confidence / Low Complexity
+        Q2 top-right    : (270,60 )–(460,260)  High Confidence / High Complexity
+        Q3 bottom-left  : (80 ,260)–(270,460)  Low  Confidence / Low Complexity
+        Q4 bottom-right : (270,260)–(460,460)  Low  Confidence / High Complexity
+    -->
+    <svg
+      id="vam-svg"
+      viewBox="0 0 520 520"
+      role="img"
+      aria-label="Virtue Activation Matrix — a 2×2 grid mapping confidence and complexity to four decision-guidance quadrants"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <title>Virtue Activation Matrix</title>
+      <desc>A 2×2 decision matrix. Rows: High Confidence (top) / Low Confidence (bottom). Columns: Low Complexity (left) / High Complexity (right). Each quadrant describes how an AI should respond.</desc>
+
+      <!-- ── Background ──────────────────────────────── -->
+      <rect x="80" y="60" width="380" height="400" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+
+      <!-- ── Quadrant fills ──────────────────────────── -->
+
+      <!-- Q1: top-left — High Conf / Low Comp (teal-green) -->
+      <g
+        id="q1"
+        class="quadrant"
+        tabindex="0"
+        role="button"
+        aria-label="Q1 — high confidence, low complexity"
+        aria-describedby="q1-desc"
+        data-tooltip="q1-tooltip"
+      >
+        <desc>Q1 — high confidence / low complexity: Proceed with a clear, concrete recommendation. Add 1–2 things to monitor and when to reassess if new information appears.</desc>
+        <rect class="q-bg" x="81" y="61" width="188" height="198" fill="#1a4a3a" />
+        <rect class="focus-ring" x="82" y="62" width="186" height="196" rx="3"/>
+        <text x="175" y="130" text-anchor="middle" fill="#3fb884" font-size="28" font-weight="700" font-family="inherit">Q1</text>
+        <text x="175" y="158" text-anchor="middle" fill="#8ecfb8" font-size="11.5" font-family="inherit">High Confidence</text>
+        <text x="175" y="174" text-anchor="middle" fill="#8ecfb8" font-size="11.5" font-family="inherit">Low Complexity</text>
+        <text x="175" y="210" text-anchor="middle" fill="#3fb884" font-size="10" font-family="inherit" opacity=".75">→ Proceed</text>
+      </g>
+
+      <!-- Q2: top-right — High Conf / High Comp (amber) -->
+      <g
+        id="q2"
+        class="quadrant"
+        tabindex="0"
+        role="button"
+        aria-label="Q2 — high confidence, high complexity"
+        aria-describedby="q2-desc"
+        data-tooltip="q2-tooltip"
+      >
+        <desc>Q2 — high confidence / high complexity: Recommend a primary plan, but keep alternatives in view. State what findings would make you switch paths and which signs require escalation.</desc>
+        <rect class="q-bg" x="271" y="61" width="188" height="198" fill="#3a2e10" />
+        <rect class="focus-ring" x="272" y="62" width="186" height="196" rx="3"/>
+        <text x="365" y="130" text-anchor="middle" fill="#d4a017" font-size="28" font-weight="700" font-family="inherit">Q2</text>
+        <text x="365" y="158" text-anchor="middle" fill="#c8a84b" font-size="11.5" font-family="inherit">High Confidence</text>
+        <text x="365" y="174" text-anchor="middle" fill="#c8a84b" font-size="11.5" font-family="inherit">High Complexity</text>
+        <text x="365" y="210" text-anchor="middle" fill="#d4a017" font-size="10" font-family="inherit" opacity=".75">→ Plan + Monitor</text>
+      </g>
+
+      <!-- Q3: bottom-left — Low Conf / Low Comp (sky-blue) -->
+      <g
+        id="q3"
+        class="quadrant"
+        tabindex="0"
+        role="button"
+        aria-label="Q3 — low confidence, low complexity"
+        aria-describedby="q3-desc"
+        data-tooltip="q3-tooltip"
+      >
+        <desc>Q3 — low confidence / low complexity: Before concluding, ask 1–2 key questions. Explain what's missing, why it matters, and give a provisional step conditional on the answer.</desc>
+        <rect class="q-bg" x="81" y="261" width="188" height="198" fill="#102038" />
+        <rect class="focus-ring" x="82" y="262" width="186" height="196" rx="3"/>
+        <text x="175" y="330" text-anchor="middle" fill="#4d9de0" font-size="28" font-weight="700" font-family="inherit">Q3</text>
+        <text x="175" y="358" text-anchor="middle" fill="#7ab8e8" font-size="11.5" font-family="inherit">Low Confidence</text>
+        <text x="175" y="374" text-anchor="middle" fill="#7ab8e8" font-size="11.5" font-family="inherit">Low Complexity</text>
+        <text x="175" y="410" text-anchor="middle" fill="#4d9de0" font-size="10" font-family="inherit" opacity=".75">→ Ask First</text>
+      </g>
+
+      <!-- Q4: bottom-right — Low Conf / High Comp (red) -->
+      <g
+        id="q4"
+        class="quadrant"
+        tabindex="0"
+        role="button"
+        aria-label="Q4 — low confidence, high complexity"
+        aria-describedby="q4-desc"
+        data-tooltip="q4-tooltip"
+      >
+        <desc>Q4 — low confidence / high complexity: Don't assume: acknowledge limits and escalate. Ask for critical data, suggest who/where to refer, and provide safe steps + red flags.</desc>
+        <rect class="q-bg" x="271" y="261" width="188" height="198" fill="#2a1010" />
+        <rect class="focus-ring" x="272" y="262" width="186" height="196" rx="3"/>
+        <text x="365" y="330" text-anchor="middle" fill="#e05252" font-size="28" font-weight="700" font-family="inherit">Q4</text>
+        <text x="365" y="358" text-anchor="middle" fill="#e08080" font-size="11.5" font-family="inherit">Low Confidence</text>
+        <text x="365" y="374" text-anchor="middle" fill="#e08080" font-size="11.5" font-family="inherit">High Complexity</text>
+        <text x="365" y="410" text-anchor="middle" fill="#e05252" font-size="10" font-family="inherit" opacity=".75">→ Escalate</text>
+      </g>
+
+      <!-- ── Grid lines ───────────────────────────────── -->
+      <!-- Vertical centre line -->
+      <line x1="270" y1="60" x2="270" y2="460" stroke="#30363d" stroke-width="1.5"/>
+      <!-- Horizontal centre line -->
+      <line x1="80" y1="260" x2="460" y2="260" stroke="#30363d" stroke-width="1.5"/>
+
+      <!-- ── Axis labels ──────────────────────────────── -->
+      <!-- Y-axis: Confidence -->
+      <text transform="rotate(-90)" x="-260" y="32" text-anchor="middle"
+            fill="#8b949e" font-size="13" font-family="inherit" letter-spacing=".04em">CONFIDENCE</text>
+      <text x="55" y="160" text-anchor="middle" fill="#8b949e" font-size="10" font-family="inherit">HIGH</text>
+      <text x="55" y="360" text-anchor="middle" fill="#8b949e" font-size="10" font-family="inherit">LOW</text>
+
+      <!-- X-axis: Complexity -->
+      <text x="270" y="500" text-anchor="middle"
+            fill="#8b949e" font-size="13" font-family="inherit" letter-spacing=".04em">COMPLEXITY</text>
+      <text x="175" y="482" text-anchor="middle" fill="#8b949e" font-size="10" font-family="inherit">LOW</text>
+      <text x="365" y="482" text-anchor="middle" fill="#8b949e" font-size="10" font-family="inherit">HIGH</text>
+
+      <!-- Axis arrow lines -->
+      <line x1="80" y1="470" x2="455" y2="470" stroke="#8b949e" stroke-width="1" marker-end="url(#arrow-x)"/>
+      <line x1="70" y1="460" x2="70" y2="65" stroke="#8b949e" stroke-width="1" marker-end="url(#arrow-y)"/>
+      <defs>
+        <marker id="arrow-x" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto">
+          <path d="M0,0 L0,5 L7,2.5 Z" fill="#8b949e"/>
+        </marker>
+        <marker id="arrow-y" markerWidth="7" markerHeight="7" refX="2.5" refY="5" orient="auto">
+          <path d="M0,7 L5,7 L2.5,0 Z" fill="#8b949e"/>
+        </marker>
+      </defs>
+    </svg><!-- end svg -->
+
+    <!-- ── Tooltip overlays ─────────────────────────────────────── -->
+    <!--
+      Positioned absolutely over the SVG wrapper.
+      show/hide is handled by JS (class "visible").
+      Top/left percentages correspond to the SVG viewBox quadrant centres.
+    -->
+
+    <div id="q1-tooltip" class="vam-tooltip arrow-bottom" role="tooltip">
+      <strong>Q1 — High Confidence / Low Complexity</strong>
+      Proceed with a clear, concrete recommendation. Add 1–2 things to monitor and when to reassess if new information appears.
+    </div>
+
+    <div id="q2-tooltip" class="vam-tooltip arrow-bottom" role="tooltip">
+      <strong>Q2 — High Confidence / High Complexity</strong>
+      Recommend a primary plan, but keep alternatives in view. State what findings would make you switch paths and which signs require escalation.
+    </div>
+
+    <div id="q3-tooltip" class="vam-tooltip arrow-top" role="tooltip">
+      <strong>Q3 — Low Confidence / Low Complexity</strong>
+      Before concluding, ask 1–2 key questions. Explain what's missing, why it matters, and give a provisional step conditional on the answer.
+    </div>
+
+    <div id="q4-tooltip" class="vam-tooltip arrow-top" role="tooltip">
+      <strong>Q4 — Low Confidence / High Complexity</strong>
+      Don't assume: acknowledge limits and escalate. Ask for critical data, suggest who/where to refer, and provide safe steps + red flags.
+    </div>
+
+  </div><!-- .vam-wrapper -->
+</section>
+
+<script>
+(function () {
+  'use strict';
+
+  // Map quadrant id → tooltip id
+  var QUADS = [
+    { quadId: 'q1', tipId: 'q1-tooltip', pos: 'above' },
+    { quadId: 'q2', tipId: 'q2-tooltip', pos: 'above' },
+    { quadId: 'q3', tipId: 'q3-tooltip', pos: 'below' },
+    { quadId: 'q4', tipId: 'q4-tooltip', pos: 'below' },
+  ];
+
+  var wrapper = document.getElementById('vam-wrapper');
+
+  /* Position a tooltip div centred over/under its quadrant SVG group.
+     pos = 'above' → tooltip appears above the quadrant centre
+     pos = 'below' → tooltip appears below the quadrant centre       */
+  function positionTooltip(quadEl, tipEl, pos) {
+    var qRect = quadEl.getBoundingClientRect();
+    var wRect = wrapper.getBoundingClientRect();
+    var tipW  = tipEl.offsetWidth  || 260;
+    var tipH  = tipEl.offsetHeight || 90;
+
+    // Centre of the quadrant relative to wrapper
+    var cx = qRect.left + qRect.width  / 2 - wRect.left;
+    var cy = qRect.top  + qRect.height / 2 - wRect.top;
+
+    var left = cx - tipW / 2;
+    // Clamp so tooltip stays within wrapper horizontally
+    left = Math.max(4, Math.min(left, wRect.width - tipW - 4));
+
+    var top;
+    if (pos === 'above') {
+      top = (qRect.top - wRect.top) - tipH - 12;
+      if (top < 4) {
+        // Flip to below if not enough room above
+        top = (qRect.bottom - wRect.top) + 12;
+        tipEl.classList.replace('arrow-bottom', 'arrow-top');
+      } else {
+        tipEl.classList.replace('arrow-top', 'arrow-bottom');
+      }
+    } else {
+      top = (qRect.bottom - wRect.top) + 12;
+      if (top + tipH > wRect.height - 4) {
+        // Flip to above
+        top = (qRect.top - wRect.top) - tipH - 12;
+        tipEl.classList.replace('arrow-top', 'arrow-bottom');
+      } else {
+        tipEl.classList.replace('arrow-bottom', 'arrow-top');
+      }
+    }
+
+    tipEl.style.left = left + 'px';
+    tipEl.style.top  = top  + 'px';
+  }
+
+  var activeTooltip = null; // currently shown tooltip (for mobile dismiss)
+
+  function showTooltip(quadEl, tipEl, pos) {
+    // Hide any other open tooltip
+    if (activeTooltip && activeTooltip !== tipEl) {
+      hideTooltip(activeTooltip);
+    }
+    positionTooltip(quadEl, tipEl, pos);
+    tipEl.classList.add('visible');
+    activeTooltip = tipEl;
+  }
+
+  function hideTooltip(tipEl) {
+    tipEl.classList.remove('visible');
+    if (activeTooltip === tipEl) activeTooltip = null;
+  }
+
+  QUADS.forEach(function (q) {
+    var quadEl = document.getElementById(q.quadId);
+    var tipEl  = document.getElementById(q.tipId);
+    if (!quadEl || !tipEl) return;
+
+    // ── Desktop: hover ──────────────────────────────
+    quadEl.addEventListener('mouseenter', function () {
+      showTooltip(quadEl, tipEl, q.pos);
+    });
+    quadEl.addEventListener('mouseleave', function (e) {
+      // Keep tooltip visible if pointer moves into the tooltip itself
+      if (e.relatedTarget && tipEl.contains(e.relatedTarget)) return;
+      hideTooltip(tipEl);
+    });
+    tipEl.addEventListener('mouseleave', function () {
+      hideTooltip(tipEl);
+    });
+
+    // ── Keyboard: focus / blur ───────────────────────
+    quadEl.addEventListener('focus', function () {
+      showTooltip(quadEl, tipEl, q.pos);
+    });
+    quadEl.addEventListener('blur', function () {
+      hideTooltip(tipEl);
+    });
+    // Also close on Escape
+    quadEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { hideTooltip(tipEl); quadEl.blur(); }
+    });
+
+    // ── Mobile: tap to toggle ────────────────────────
+    // Use touchend so we don't block scrolling over the matrix.
+    quadEl.addEventListener('touchend', function (e) {
+      // Only act on a tap (not a scroll-end)
+      if (e.cancelable) e.preventDefault(); // suppress subsequent mouse events
+      if (tipEl.classList.contains('visible')) {
+        hideTooltip(tipEl);
+      } else {
+        showTooltip(quadEl, tipEl, q.pos);
+      }
+    });
+  });
+
+  // Tap outside all quadrants on mobile → dismiss
+  document.addEventListener('touchend', function (e) {
+    if (!activeTooltip) return;
+    var clickedInsideQuad = QUADS.some(function (q) {
+      var quadEl = document.getElementById(q.quadId);
+      var tipEl  = document.getElementById(q.tipId);
+      return (quadEl && quadEl.contains(e.target)) ||
+             (tipEl  && tipEl.contains(e.target));
+    });
+    if (!clickedInsideQuad) {
+      if (activeTooltip) hideTooltip(activeTooltip);
+    }
+  });
+
+  // Reposition open tooltip on window resize
+  window.addEventListener('resize', function () {
+    if (!activeTooltip) return;
+    QUADS.forEach(function (q) {
+      var tipEl = document.getElementById(q.tipId);
+      if (tipEl === activeTooltip) {
+        positionTooltip(document.getElementById(q.quadId), tipEl, q.pos);
+      }
+    });
+  });
+
+}());
+</script>
+
+</body>
+</html>

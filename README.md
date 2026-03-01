@@ -41,6 +41,21 @@ BODHI uses a two-pass prompting strategy that teaches LLMs to:
 
 ---
 
+## Don't let AI guess with patient lives.
+
+Most medical AI is sycophantic and overconfident. BODHI is an open-source framework that forces LLMs to ask questions, admit uncertainty, and recognize their limits.
+
+| | Clarifying Questions | Behavior |
+|---|---|---|
+| **Standard AI** | 7.8% | Guessing |
+| **BODHI AI** | 97.3% | Inquiring |
+
+---
+
+## Preliminary results from BODHI's prompting implementation on HealthBench Hard
+
+---
+
 ## Quick Start
 
 ```python
