@@ -11,7 +11,7 @@
 
 [![PLOS Digital Health](https://img.shields.io/badge/PLOS_Digital_Health-Published-green)](https://journals.plos.org/digitalhealth/article?id=10.1371/journal.pdig.0001013)
 [![The Lancet](https://img.shields.io/badge/The_Lancet-Published-green)](https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(25)01626-5/fulltext)
-
+[![BMJ Health & Care Informatics](https://img.shields.io/badge/BMJ_Health_%26_Care_Informatics-Published-green)](https://informatics.bmj.com/content/33/1/e101877)
 </div>
 
 ---
@@ -194,26 +194,33 @@ response.metadata  # Timing, domain info
 ```bibtex
 @article{cajas2026beyond,
   title={Beyond overconfidence: Embedding curiosity and humility for ethical medical AI},
-  author={Cajas Ordóñez, Sebastián Andrés and Ocampo Osorio, Felipe and Lange, Maximin and Celi, Leo Anthony and others},
+  author={Cajas Ord{\'o}{\~n}ez, Sebasti{\'a}n Andr{\'e}s and others},
   journal={PLOS Digital Health},
-  year={2026},
-  doi={10.1371/journal.pdig.0001013}
+  volume={5},
+  number={1},
+  pages={e0001013},
+  year={2026}
 }
-```
 
-<details>
-<summary>Additional citations</summary>
-
-```bibtex
 @article{ordonez2025humility,
   title={Humility and curiosity in human--AI systems for health care},
-  author={Ordoñez, Sebastián Andrés Cajas and Lange, Maximin and Lunde, Torleif Markussen and Meni, Mackenzie J and Premo, Anna E},
+  author={Ordo{\~n}ez, Sebasti{\'a}n Andr{\'e}s Cajas and others},
   journal={The Lancet},
   volume={406},
   number={10505},
+  pages={804--805},
   year={2025}
 }
+
+@article{arslan2026engineering,
+  title={An Engineering Framework for Curiosity-Driven and Humble AI in Clinical Decision Support},
+  author={Arslan, Janan and Benke, Kurt and Ordo{\~n}ez, Sebasti{\'a}n Andr{\'e}s Cajas and Castro, Rowell and Celi, Leo Anthony and Cruz-Suarez, Gustavo Adolfo and Reyes, Roben Delos and Engelmann, Justin and Ercole, Ari and Hilel, Almog and others},
+  journal={BMJ Health \& Care Informatics},
+  year={2026},
+  publisher={BMJ Publishing Group}
+}
 ```
+
 
 </details>
 
